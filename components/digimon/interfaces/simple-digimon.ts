@@ -1,5 +1,5 @@
 export interface SimpleDigimon {
-    id: string;
+    id: number;
     name: string;
     href: string;
     image: string;

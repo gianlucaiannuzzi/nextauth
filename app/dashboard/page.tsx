@@ -1,7 +1,7 @@
 export default function DashboardPage(){
     return (
         <div className="h-full">
-            Solo puedo entrar si estoy loggeado!
+            Necesitas estar loggeado para acceder a esta seccion!
         </div>
     );
 }

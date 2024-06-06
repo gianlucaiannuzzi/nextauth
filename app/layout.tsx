@@ -4,7 +4,6 @@ import "./globals.css";
 import { getServerSession } from "next-auth";
 import Login from "../components/auth/login";
 import Logout from "../components/auth/logout";
-import Link from "next/link";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,7 +19,7 @@ export default async function RootLayout({
 }>) {
   const session = await getServerSession();
   return (
-    <html lang="en" className=" bg-gray-100 h-screen">
+    <html lang="en" className=" bg-gray-100 text-black h-screen">
       <body className={inter.className}>
         <nav className="flex p-2 text-2xl bg-orange-400 h-16">
           {!session &&
