@@ -1,4 +1,5 @@
 export { GrillaParametrizable } from './components/grilla-parametrizable'
 
-export type { ConsultaMovimientos } from './interfaces/movimientos'
-export type { Movimiento } from './interfaces/movimientos'
+export { HeaderMovimientos } from './data/headerMovimientos'
+export { ActionsMovimientos } from './data/actionsMovimientos'
+export { DatosMovimientos } from './data/datosMovimientos'

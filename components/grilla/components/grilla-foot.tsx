@@ -1,22 +1,33 @@
 // ! Este componente se ejecuta del lado del cliente.
 "use client"
+import { FootProps, PaginacionProps } from '../interfaces/interfaces'
 import { ChevronLeft, ChevronRight, CircleFadingPlus } from "lucide-react";
 import { useSearchParams, usePathname, useRouter } from "next/navigation";
-import { useDebouncedCallback } from "use-debounce";
+import { useEffect } from "react";
 
-// ? Los parametros necesarios para crear la grilla.
-// ? header: array con la misma cantidad de columnas del JSON, que dara el titulo de cada columna.
-// ? body: JSON con la lista de los valores de la grilla. Todos los elementos deben tener la misma columna y tipo, como un response.
-// ? paginacion: si se va a aplicar paginacion o no, puede ser true o false.
-// ? clase: si la grilla sera solo de consulta ("C") o para modificacion ("ABM").
-// ? filasPorPagina: cantidad de filas que se desea si se aplica la paginacion.
-interface Props {
-    paginacion: boolean,
-    clase: string,
-    paginasTotales: number
-}
+const GrillaFoot = ({ actions, clase, paginasTotales }: FootProps) => {
 
-const GrillaFoot = ({ paginacion, clase, paginasTotales }: Props) => {
+    return (
+        <tfoot className="flex flex-col mt-2">
+            <tr className=" text-slate-700">
+                <td className="flex justify-end mx-2">
+                    {actions.map((accion) => (!accion.modificaRegistro &&
+                        <button
+                            key={actions.indexOf(accion)}
+                            className={`px-3 rounded-lg ${accion.style}`}
+                            onClick={() => accion.funcion()}
+                        >
+                            <accion.icono size={18} />
+                        </button>
+                    ))}
+                </td>
+            </tr>
+            <GrillaPaginacion arregloPaginas={Array.from({ length: paginasTotales }, (_, i) => i + 1)} />
+        </tfoot>
+    );
+};
+
+const GrillaPaginacion = ({ arregloPaginas }: PaginacionProps) => {
 
     // ? Valores necesarios para realizar la paginacion.
     const searchParams = useSearchParams();
@@ -24,77 +35,101 @@ const GrillaFoot = ({ paginacion, clase, paginasTotales }: Props) => {
     const { replace } = useRouter();
     const pagina = Number(searchParams.get('currentPage')) || 1;
 
-    // ? Funcion que se encarga de la busqueda de Strings por columnas.
-    // ? Se usa un debounce para no sobrecargar de peticiones al tipear cada letra.
-    const handleSearch = useDebouncedCallback((busqueda: string) => {
-        const params = new URLSearchParams(searchParams);
-        if (busqueda) {
-            params.set('searchString', busqueda);
-        } else {
-            params.delete('searchString');
-        }
-        params.set('currentPage', '1');
-        replace(`${pathname}?${params.toString()}`)
-    }, 300);
-
-    // ? Funcion que se encarga de la paginacion.
+    // ? Funcion que se encarga de cambiar la pagina por URL.
     const handlePage = (pagina: number) => {
         const params = new URLSearchParams(searchParams);
         params.set('currentPage', pagina.toString());
         replace(`${pathname}?${params.toString()}`)
     };
 
-    // TODO Funcion que añada un registro a la grilla.
-    const handleAdd = () => {
+    // ? Se toma como valor por defecto para la pagina actual el valor 1.
+    useEffect(() => {
+        const params = new URLSearchParams(searchParams);
+        params.set('currentPage', pagina.toString());
+        replace(`${pathname}?${params.toString()}`)
+    });
 
+    // ? Funcion que se encarga de generar la paginacion dinamica de la grilla.
+    // ? paginas: arreglo con cada pagina como elemento.
+    // ? paginaActual: valor actual de la pagina.
+    const generarPaginacion = (paginas: number[], paginaActual: number) => {
+
+        // ? Si la cantidad de paginas es menor o igual a 5 la paginacion sera estatica.
+        if (paginas.length <= 5) {
+            return (
+                paginas.map((paginaEnumerada) => (
+                    <button
+                        onClick={() => handlePage(paginaEnumerada)}
+                        key={paginaEnumerada}
+                        className={`${paginaEnumerada === pagina ? 'bg-blue-500 text-white px-3 rounded-lg' : ''} text-sm px-2 py-1`}
+                    >
+                        {paginaEnumerada.toString()}
+                    </button>
+                ))
+            );
+
+            // ? Caso contrario la paginacion se renderizara dinamicamente.   
+        } else {
+
+            // ? Se crea un arreglo vacio que se llenara con las paginas correspondientes a cada caso.
+            // ? Para rellenar con '...' se utilizara la pagina -1.
+            const nuevoArreglo: number[] = [];
+            if (paginaActual > 3 && paginaActual < (paginas.length - 2)) {
+                nuevoArreglo.push(1, -1, paginaActual - 1, paginaActual, paginaActual + 1, -1, paginas[paginas.length - 1])
+            } else if (paginaActual > 3) {
+                nuevoArreglo.push(1, -1, paginaActual - 1, ...paginas.filter((pag) => paginas.indexOf(pag) > paginaActual - 2))
+            } else {
+                nuevoArreglo.push(...paginas.filter((pag) => paginas.indexOf(pag) < paginaActual + 1), -1, paginas[paginas.length - 1])
+            };
+
+            return (
+                nuevoArreglo.map((paginaEnumerada) => (
+                    <div
+                        key={nuevoArreglo.indexOf(paginaEnumerada)}
+                    >
+                        {paginaEnumerada === -1 &&
+                            <span
+                                className="text-sm px-2 py-1"
+                            >
+                                ...
+                            </span>
+                        }
+                        {paginaEnumerada !== -1 &&
+                            <button
+                                onClick={() => handlePage(paginaEnumerada)}
+                                className={`${paginaEnumerada === paginaActual ? 'bg-blue-500 text-white px-3 rounded-lg' : ''} text-sm px-2 py-1`}
+                            >
+                                {paginaEnumerada.toString()}
+                            </button>
+                        }
+                    </div>
+                ))
+            );
+        };
     };
 
+    // ? Funcion que se encarga del boton de pagina anterior.
     function paginaAnterior() {
         if (pagina > 1) handlePage(pagina - 1);
     }
 
+    // ? Funcion que se encarga del boton de pagina siguiente.
     function paginaSiguiente() {
-        if (pagina < paginasTotales) handlePage(pagina + 1);
+        if (pagina < arregloPaginas[arregloPaginas.length - 1]) handlePage(pagina + 1);
     }
 
     return (
-        <tfoot>
-            <tr className="grid grid-cols-3 m-2 text-slate-700">
-                <td>
-                    <input
-                        id={"busqueda"}
-                        defaultValue={searchParams.get('searchString')?.toString()}
-                        onChange={(event) => handleSearch(event.target.value)}
-                        placeholder="Buscar..."
-                        className="flex justify-start bg-slate-100 p-2 rounded-lg shadow-lg"
-                    />
-                </td>
-                {paginacion && (
-                    <td className="flex justify-center">
-                        <button className={`${pagina === 1 ? "text-transparent" : "bg-slate-100 text-slate-500 rounded-xl"} mx-2 p-1`} onClick={paginaAnterior}>
-                            <ChevronLeft />
-                        </button>
-                        <span className="text-xl p-1">
-                            {pagina.toString()}
-                        </span>
-                        <button className={`${pagina === paginasTotales ? "text-transparent" : "bg-slate-100 text-slate-500 rounded-xl"} mx-2 p-1`} onClick={paginaSiguiente}>
-                            <ChevronRight />
-                        </button>
-                    </td>
-                )}
-                <td className="flex justify-end">
-                    {clase === "ABM" && (
-                        <button
-                            onClick={() => handleAdd()}
-                            className="flex align-baseline font-semibold bg-slate-100 p-2 text-slate-700 hover:text-slate-300 rounded-lg shadow-lg"
-                        >
-                            <CircleFadingPlus size={18} />
-                            <span className="ml-2">Agregar Registro</span>
-                        </button>
-                    )}
-                </td>
-            </tr>
-        </tfoot>
+        <tr className="pb-4 text-slate-700">
+            <td className="flex justify-center">
+                <button className={`${pagina === 1 ? "text-slate-200 cursor-not-allowed" : " text-slate-500 rounded-xl"} mx-2 p-1`} onClick={paginaAnterior}>
+                    <ChevronLeft size={14} />
+                </button>
+                {generarPaginacion(arregloPaginas, pagina)}
+                <button className={`${pagina === arregloPaginas[arregloPaginas.length - 1] ? "text-slate-200 cursor-not-allowed" : " text-slate-500 rounded-xl"} mx-2 p-1`} onClick={paginaSiguiente}>
+                    <ChevronRight size={14} />
+                </button>
+            </td>
+        </tr>
     );
 };
 

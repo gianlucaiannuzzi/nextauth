@@ -1,14 +1,20 @@
+"use client"
+
 import { GrillaParametrizable } from "../../components/grilla/index";
-import { DatosMovimientos } from "@/components/grilla/data/datosMovimientos";
-import { HeaderMovimientos } from "@/components/grilla/data/headerMovimientos";
+import { HeaderMovimientos } from "@/components/grilla/index";
+import { ActionsMovimientos } from "@/components/grilla/index";
+import { DatosMovimientos } from "@/components/grilla/index";
+import { Toaster } from 'sonner'
 
 const Page = () => {
 
     const header = HeaderMovimientos;
+    const actions = ActionsMovimientos;
     const movimientos = DatosMovimientos.movimientos;
-    console.log(header.length);
     return (
-        <GrillaParametrizable header={header} body={movimientos} paginacion={true} clase="ABM" filasPorPagina={5} />
+        <>
+            <GrillaParametrizable header={header} actions={actions} body={movimientos} clase="ABM" filasPorPagina={5} /><Toaster richColors closeButton/>
+        </>
     );
 };
 
